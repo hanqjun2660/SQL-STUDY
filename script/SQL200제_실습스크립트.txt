@@ -2,6 +2,7 @@ alter session set nls_date_format='RR/MM/DD';
 
 drop table emp;
 drop table dept;
+drop table test_ename;
 
 CREATE TABLE DEPT
        (DEPTNO number(10),
@@ -54,3 +55,11 @@ insert into salgrade  values(4,2001,3000);
 insert into salgrade  values(5,3001,9999);
 
 commit;
+
+CREATE TABLE TEST_ENAME
+(ENAME VARCHAR2(10));
+
+INSERT INTO TEST_ENAME VALUES('김인호');
+INSERT INTO TEST_ENAME VALUES('안상수');
+INSERT INTO TEST_ENAME VALUES('최영희');
+COMMIT;
