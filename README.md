@@ -1,6 +1,7 @@
 # Oracle SQL Study
 > Oracle SQL 복습을 위해 작성한 프로젝트입니다.
 
+## 사용 기술
 <img src="https://img.shields.io/badge/Oracle-F80000?style=for-the-badge&logo=oracle&logoColor=white">
 
 Oracle 18C를 사용하여 초보자를 위한 SQL 200제의 실습문제로
