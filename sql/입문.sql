@@ -280,3 +280,119 @@ SELECT
 -- BETWEEN AND를 사용하여 훨씬 가독성 있는 쿼리를 작성하자.
 
 ---------------------------------------------------------------------------------------------------------
+
+/* 입문 12
+비교 연산자 배우기 3 LKIE*/
+-- 이름의 첫 글자가 S로 시작하는 사원들의 이름과 월급을 출력
+
+SELECT
+       ENAME,
+       SAL
+  FROM EMP
+ WHERE ENAME LIKE 'S%';
+ 
+SELECT
+       ENAME
+  FROM EMP
+ WHERE ENAME LIKE '_M%';
+ 
+SELECT
+       ENAME
+  FROM EMP
+ WHERE ENAME LIKE '%T';
+
+SELECT
+       ENAME
+  FROM EMP
+ WHERE ENAME LIKE '%A%';
+ 
+-- LIKE 사용시 와일드카드(%), 언더바(_) 사용
+-- EX) S% : S로 시작하는, %S% : S가 중간에 포함되어있는
+-- % : 0개 이상의 임의 문자와 일치, _ : 하나의 문자와 일치
+
+---------------------------------------------------------------------------------------------------------
+
+/* 입문 13
+비교 연산자 배우기 IS NULL*/
+-- 커미션이 NULL인 사원들의 이름과 커미션을 출력
+
+SELECT
+       ENAME,
+       COMM
+  FROM EMP
+ WHERE COMM IS NULL;
+ 
+SELECT
+       ENAME,
+       COMM
+  FROM EMP
+ WHERE COMM IS NULL;
+ 
+-- NULL을 검색하기 위해선 IS NULL을 사용하자
+-- NULL이 아닌 데이터 검색 때도 != NULL 과 같이 사용할 수 없다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 입문 14 
+비교 연산자 배우기 IN*/
+-- 직업이 SALESMAN, ANALYST,MANAGER인 사원들의 이름, 월급, 직업을 출력
+
+SELECT
+       ENAME,
+       SAL,
+       JOB
+  FROM EMP
+ WHERE JOB IN ('SALESMAN', 'ANALYST', 'MANAGER');
+ 
+/* IN 연산자를 사용하지 않고 동일한 결과를 출력하려 할때의 쿼리 */
+SELECT
+       ENAME,
+       SAL,
+       JOB
+  FROM EMP
+ WHERE (JOB = 'SALESMAN' OR JOB = 'ANALYST' OR JOB = 'MANAGER');
+ 
+SELECT
+       ENAME,
+       SAL,
+       JOB
+  FROM EMP
+ WHERE JOB NOT IN ('SALESMAN', 'ANALYST', 'MANAGER');
+
+ /* NOT과 IN을 같이 사용하지 않았을 때 동일한 결과를 출력하는 쿼리 */
+ SELECT
+        ENAME,
+        SAL,
+        JOB
+   FROM EMP
+ WHERE (JOB != 'SALESMAN' OR JOB != 'ANALYST' OR JOB != 'MANAGER');
+
+-- '=' 연산자는 하나의 값만 조회할 수 있는 반면 IN 연산자는 여러개로 조회가 가능하다.
+-- NOT 연산자를 같이 사용하면 반대로도 조회를 할 수 있다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 입문 15
+논리 연산자 배우기 (AND, OR, NOT)*/
+-- 직업이 SALESMAN이고 월급이 1200 이상인 사원들의 이름, 월급, 직업을 출력
+
+SELECT
+       ENAME,
+       SAL,
+       JOB
+  FROM EMP
+ WHERE JOB = 'SALESMAN'
+   AND SAL >= 1200;
+
+/* 하나라도 조건에 맞지 않는 경우 데이터가 반환되지 않는다. */
+SELECT
+       ENAME,
+       SAL,
+       JOB
+  FROM EMP
+ WHERE JOB = 'ABCDEFG'
+   AND SAL >= 1200;
+   
+-- AND 연산자 사용시 조건 2개가 전부 TRUE여야 데이터를 반환한다.
+
+---------------------------------------------------------------------------------------------------------
