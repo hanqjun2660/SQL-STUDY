@@ -1123,4 +1123,104 @@ SELECT
  
  /* 초급 52
  데이터 분석 함수로 집계 결과 출력하기 1 (ROLLUP) */
+ -- 직업과 직업별 토탈 월급을 출력하는데, 맨 마지막 행에 토탈 월급을 출력
+ SELECT
+        JOB,
+        SUM(SAL)
+   FROM EMP
+ GROUP BY ROLLUP(JOB);
  
+ /* 컬럼 2개를 사용해보자 */
+SELECT
+       DEPTNO,
+       JOB,
+       SUM(SAL)
+  FROM EMP
+ GROUP BY ROLLUP(DEPTNO, JOB);
+ 
+-- ROLLUP을 사용하면 선택한 컬럼의 합계를 맨 마지막 행에 출력할 수 있다.
+-- GROUP BY 절에 사용하며 총 합계를 구해야하는 컬럼을 인자로 넣어준다.
+-- 인자로 여러개를 넣을 수 있다. 위 쿼리에선 부서별 월급 합계 및 총합계가 출력된다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 초급 53
+데이터 분석 함수로 집계 결과 출력하기 2 (CUBE)*/
+-- 직업, 직업별 토탈 월급을 출력하는데, 첫 번째 행에 토탈 월급을 출력
+SELECT
+       JOB,
+       SUM(SAL)
+  FROM EMP
+ GROUP BY CUBE(JOB);
+ 
+/* 컬럼 2개를 사용하여 출력해보자 */
+SELECT
+       DEPTNO,
+       JOB,
+       SUM(SAL)
+  FROM EMP
+ GROUP BY CUBE(DEPTNO, JOB);
+
+-- ROLLUP과 마찬가지로 조회된 컬럼의 집계를 구하지만, 제일 첫번째 행에 집계를 출력한다.
+-- ROLLUP과 마찬가지로 오름차순 정렬이 된다.
+-- ROLLUP과 마찬가지로 인자를 여러개 받을 수 있고, 위 쿼리에선 부서별 토탈합계, 직업별 합계, 전체 합계가 출력된다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 초급 54
+데이터 분석 함수로 집계 결과 출력하기 3 (GROUPING SETS) */
+-- 부서 번호와 직업, 부서 번호별 토탈 월급과 직업별 토탈 월급을 출력
+SELECT
+       DEPTNO,
+       JOB,
+       SUM(SAL)
+  FROM EMP
+ GROUP BY GROUPING SETS(DEPTNO, JOB);
+ 
+/* 아래 ROLLUP문을 GROUPING SETS으로 변경하면 다음과 같다. */
+SELECT
+       DEPTNO,
+       SUM(SAL)
+  FROM EMP
+ GROUP BY ROLLUP(DEPTNO);
+ 
+/* GROUPING SET으로 변경 후 */
+SELECT
+       DEPTNO,
+       SUM(SAL)
+  FROM EMP
+ GROUP BY GROUPING SETS(DEPTNO, ());
+ 
+-- GROUPING SETS은 ROLLUP/CUBE와 같이 집계를 내는 함수지만, 집계를 내고 싶은 컬럼만 기술하면 되기때문에 간단하다.
+-- 전체집계는 마지막 인자로 ()를 넣어준다.
+-- GROUPING SETS가 좀 많이 편한거 같다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 초급 55 
+ 데이터 분석 함수로 출력 결과 넘버링 하기 (ROW_NUMBER) */
+
+SELECT
+       EMPNO,
+       ENAME,
+       SAL,
+       RANK() OVER(ORDER BY SAL DESC) AS "RANK",
+       DENSE_RANK() OVER(ORDER BY SAL DESC) AS "DENSE_RANK",
+       ROW_NUMBER() OVER(ORDER BY SAL DESC) AS "번호"
+  FROM EMP
+ WHERE DEPTNO = 20;
+ 
+ /* 부서 번호별로 월급에 대한 순위를 출력 다만, 부서 번호별로 순위를 출력해보자*/
+ SELECT
+        DEPTNO,
+        ENAME,
+        SAL,
+        ROW_NUMBER() OVER(PARTITION BY DEPTNO ORDER BY SAL DESC) AS "번호"
+   FROM EMP;
+ 
+ -- ROW_NUMBER 함수는 OVER절 괄호안 ORDER BY를 필수로 입력해야 한다. (에러발생)
+ -- ROW_NUMBER 함수는 RANK/DENSE_RANK와 다르게 기준점의 동점이 있어도 번호가 순서대로 출력된다.
+ -- ROWNUM과 유사하다.
+ -- RANK : 순위가 건너 뛰어도 괜찮다면 / DENSE_RANK : 동점자는 동일 순위로 하고 싶다면 둘다 아니라면 ROW_NUMBER를 사용하면 될 것 같다.
+
+---------------------------------------------------------------------------------------------------------
