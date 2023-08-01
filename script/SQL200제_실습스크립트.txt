@@ -3,6 +3,7 @@ alter session set nls_date_format='RR/MM/DD';
 drop table emp;
 drop table dept;
 drop table test_ename;
+drop  table order2;
 
 CREATE TABLE DEPT
        (DEPTNO number(10),
@@ -63,3 +64,15 @@ INSERT INTO TEST_ENAME VALUES('김인호');
 INSERT INTO TEST_ENAME VALUES('안상수');
 INSERT INTO TEST_ENAME VALUES('최영희');
 COMMIT;
+
+create table order2
+( ename  varchar2(10),
+  bicycle  number(10),
+  camera   number(10),
+  notebook  number(10) );
+
+insert  into  order2  values('SMITH', 2,3,1);
+insert  into  order2  values('ALLEN',1,2,3 );
+insert  into  order2  values('KING',3,2,2 );
+
+commit;

@@ -862,7 +862,7 @@ SELECT
 
 -- DENSE_RANK의 사용법은 RANK 함수와 동일하다.
 -- DENSR_RANK를 사용하면 1순위인 사람이 2명 이상 있어도 순위가 제대로 나온다. (동점자 순위 동일하게 처리 됨)
--- WHITIN GROUP은 어느 그룹 내에서 라는 뜻으로 위 쿼리는 2975가 SAL 그룹안에서 몇 순위인지 보겠다는 쿼리다.
+-- WITHIN GROUP은 어느 그룹 내에서 라는 뜻으로 위 쿼리는 2975가 SAL 그룹안에서 몇 순위인지 보겠다는 쿼리다.
 
 ---------------------------------------------------------------------------------------------------------
 
@@ -908,3 +908,219 @@ SELECT
 -- 딱히 비율을 출력할 일은 없을것 같아 자주사용하지 않을 것 같다.
 
 ---------------------------------------------------------------------------------------------------------
+
+/* 초급 45
+데이터 분석 함수로 데이터를 가로로 출력하기 (LISTAGG) */
+-- 부서 번호를 출력하고, 부서 번호 옆에 해당 부서에 속하는 사원들의 이름을 가로로 출력
+SELECT
+       DEPTNO,
+       LISTAGG(ENAME,',') WITHIN GROUP(ORDER BY ENAME) AS "EMPLOYEE"
+  FROM EMP
+ GROUP BY DEPTNO;
+ 
+/* 직업과 그 직업에 속한 사원들의 이름을 가로로 출력 */
+SELECT
+       JOB,
+       LISTAGG(ENAME, ',') WITHIN GROUP(ORDER BY ENAME) AS "이름"
+  FROM EMP
+ GROUP BY JOB;
+ 
+/* 연결 연산자를 사용하여 이름 옆에 월급을 같이 출력 */
+SELECT
+       JOB,
+       LISTAGG(ENAME || '(' || SAL || ')' || ',') WITHIN GROUP(ORDER BY ENAME) AS "이름과 월급"
+  FROM EMP
+ GROUP BY JOB;
+ 
+-- LISTAGG 함수는 데이터를 가로로 출력한다.
+-- LISTAGG 함수를 사용하기 위해서는 GROUP BY 절은 필수로 사용해야 한다.
+-- * WITHIN GROUP 함수는 어느 그룹안에서 라는 뜻이다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 초급 46
+데이터 분석 함수로 바로 전 행과 다음 행 출력하기(LAG, LEAD) */
+/* 
+    사원 번호, 이름, 월급을 출력하고 그 옆에 바로 전 행의 월급을 출력하고,
+    또 옆에 바로 다음 행의 월급을 출력
+*/
+SELECT
+       EMPNO,
+       ENAME,
+       SAL,
+       LAG(SAL, 1) OVER(ORDER BY SAL) AS "전 행",
+       LEAD(SAL, 1) OVER(ORDER BY SAL) AS "다음 행"
+  FROM EMP
+ WHERE JOB IN('ANALYST', 'MANAGER');
+ 
+/* 직업이 ANALYST, MANAGER인 사원들의 사원 번호, 이름, 입사일, 바로 전에 입사한 사원의 입사일, 바로 다음에 입사한 사원의 입사일을 출력 */
+SELECT
+       EMPNO,
+       ENAME,
+       HIREDATE,
+       LAG(HIREDATE, 1) OVER(ORDER BY HIREDATE) AS "바로 전 입사자 입사일",
+       LEAD(HIREDATE, 1) OVER(ORDER BY HIREDATE) AS "바로 다음 입사자 입사일"
+  FROM EMP
+ WHERE JOB IN('ANALYST', 'MANAGER');
+
+/*
+    부서 번호, 사원 번호, 이름, 입사일, 바로 전 입사한 사원의 입사일을 출력하고,
+    바로 다음에 입사한 사원의 입사일을 출력하는데 부서 번호별로 구분해서 출력
+*/
+SELECT
+       DEPTNO,
+       EMPNO,
+       ENAME,
+       HIREDATE,
+       LAG(HIREDATE, 1) OVER(PARTITION BY DEPTNO ORDER BY HIREDATE) AS "바로 전 입사자 입사일",
+       LEAD(HIREDATE, 1) OVER(PARTITION BY DEPTNO ORDER BY HIREDATE) AS "바로 다음 입사자 입사일"
+  FROM EMP;
+ 
+-- LAG : 전행을 출력하는 함수
+-- LEAD : 다음행을 출력하는 함수
+-- RANK, DENSE_RANK와 같이 사용법이 비슷함 (대체로 데이터 분석 함수가 사용법이 비슷한듯)
+-- PARTITION BY는 해당 컬럼별로 구분을 하여 출력하게 도와주는 함수인데 간혹 쓸것같다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 초급 47
+COLUMN을 ROW로 출력하기 1 (SUM + DECODE) */
+-- 부서 번호, 부서 번호별 토탈 월급을 출력하는데, 가로로 출력
+SELECT
+       SUM(DECODE(DEPTNO, 10, SAL)) AS "10",
+       SUM(DECODE(DEPTNO, 20, SAL)) AS "20",
+       SUM(DECODE(DEPTNO, 30, SAL)) AS "30"
+  FROM EMP;
+  
+/* 부서 번호가 10이면 월급을 출력, 아니면 NULL 출력*/
+SELECT
+       DEPTNO,
+       DECODE(DEPTNO, 10, SAL) AS "10"
+  FROM EMP;
+  
+/* 직업별 토탈 월급 출력 */
+SELECT
+       SUM(DECODE(JOB, 'ANALYST', SAL)) AS "ANALYST",
+       SUM(DECODE(JOB, 'CLERK', SAL)) AS "CLERK",
+       SUM(DECODE(JOB, 'MANAGER', SAL)) AS "MANAGER",
+       SUM(DECODE(JOB, 'SALESMAN', SAL)) AS "SALESMAN"
+  FROM EMP;
+
+/* 부서 번호별 각각 직업의 토탈 월급 출력 */
+SELECT
+       DEPTNO,
+       SUM(DECODE(JOB, 'ANALYST', SAL)) AS "ANALYST",
+       SUM(DECODE(JOB, 'CLERK', SAL)) AS "CLERK",
+       SUM(DECODE(JOB, 'MANAGER', SAL)) AS "MANAGER",
+       SUM(DECODE(JOB, 'SALESMAN', SAL)) AS "SALESMAN"
+  FROM EMP
+ GROUP BY DEPTNO;
+  
+-- DECODE 함수는 조건문처럼 사용하는 함수이다. EX) DECODE(부서번호가, 10이면, 월급)
+-- DECODE 함수는 ELSE 부분을 명시하지 않으면 NULL로 출력된다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 초급 48
+COLUMN을 ROW로 출력하기 2 (PIVOT) */
+-- 부서 번호, 부서 번호별 토탈 월급을 PIVOT문을 사용하여 가로로 출력
+SELECT
+       *
+  FROM(SELECT
+              DEPTNO,
+              SAL
+         FROM EMP)
+ PIVOT(SUM(SAL) FOR DEPTNO IN (10,20,30));
+ 
+/* 문자형 데이터를 PIVOT문을 이용해서 직업과 직업별 토탈 월급을 가로로 출력 */
+SELECT
+       *
+  FROM(SELECT
+              JOB,
+              SAL
+          FROM EMP)
+ PIVOT(SUM(SAL) FOR JOB IN ('ANALYST' AS "ANALYST", 'CLERK' AS "CLERK", 'MANAGER' AS "MANAGER", 'SALESMAN' AS "SALESMAN"));
+ 
+ -- PIVOT문을 사용하면 전 예제와 같은 SUM+DECODE 보다 간결한 쿼리를 작성할 수 있다.
+ -- PIVOT문을 사용하면 FROM절엔 특정 컬럼만 선택해야 한다.
+ -- PIVOT문을 사용하였을때 컬럼명에 싱글코테이션이 생긴다 없애기 위해선 AS 후 더블코테이션으로 변경해야한다.
+ 
+ ---------------------------------------------------------------------------------------------------------
+ 
+ /* 초급 49
+ ROW를 COLUMN으로 출력하기 (UNPIVOT) */
+ -- UNPIVOT문을 사용하여 컬럼을 로우로 출력
+ SELECT
+        *
+  FROM ORDER2
+UNPIVOT(건수 FOR 아이템 IN (BICYCLE, CAMERA, NOTEBOOK));
+
+SELECT
+        *
+  FROM ORDER2
+UNPIVOT(건수 FOR 아이템 IN (BICYCLE AS 'B', CAMERA AS 'C', NOTEBOOK AS 'N'));
+
+UPDATE ORDER2 SET NOTEBOOK=NULL WHERE ENAME='SMITH';
+
+SELECT
+       *
+  FROM ORDER2
+UNPIVOT INCLUDE NULLS(건수 FOR 아이템 IN(BICYCLE AS 'B', CAMERA AS 'C', NOTEBOOK AS 'N'));
+
+-- UNPIVOT문은 열을 행으로 출력함.
+-- NULL은 UNPIVOT에서 제외됨.
+-- NULL을 포함시키기 위해선 INCLUDE NULL을 사용해야함.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 초급 50
+데이터 분석 함수로 누적 데이터 출력하기 (SUM OVER) */
+-- 직업이 ANALYST, MANAGER인 사원들의 사원 번호, 이름, 월급, 월급의 누적치를 출력
+SELECT
+       EMPNO,
+       ENAME,
+       SAL,
+       SUM(SAL) OVER(ORDER BY EMPNO ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "누적치"
+       -- EMPNO 순으로 정렬하고 UNBOUNDED PRECEDING은 첫번째 행을 지칭 BETWEEN UNBOUNDED AND CURRENT ROW는 제일
+       -- 첫 번째 행부터 현재 행까지의 값을 말함
+  FROM EMP
+ WHERE JOB IN('ANALYST', 'MANAGER');
+ 
+-- OVER() 안에는 값을 누적할 윈도우를 지정할 수 있다.
+/*
+    윈도우 기준      윈도우 방식              설명
+    ROW              UNBOUNDED PRECEDING      첫 번째 행을 가리킴
+                     UNBOUNDED FOLLOWING      마지막 행을 가리킴
+                     CURRENT ROW              현재 행을 가리킴
+*/
+
+---------------------------------------------------------------------------------------------------------
+
+/* 초급 51
+데이터 분석 함수로 비율 출력하기(RATIO_TO_REPORT) */
+-- 부서 번호가 20번인 사원들의 사원 번호, 이름, 월급을 출력하고, 20번 부서 번호 내에서 자신의 월급 비율이 어떻게 되는지 출력
+SELECT
+       EMPNO,
+       ENAME,
+       SAL,
+       RATIO_TO_REPORT(SAL) OVER() AS "비율"
+  FROM EMP
+ WHERE DEPTNO = 20;
+ 
+/* RATIO_TO_REPORT를 사용하지 않은 경우에 동일한 결과 출력 */
+SELECT
+       EMPNO,
+       ENAME,
+       SAL,
+       SAL/SUM(SAL) OVER() AS "비율"
+  FROM EMP
+ WHERE DEPTNO = 20;
+ 
+ -- 특정 컬럼의 데이터의 합을 기준으로 각 로우의 상대적인 비율을 구할때 사용한다.
+ -- RATIO_TO_REPORT 함수는 OVER과 같이 사용한다.
+ 
+ ---------------------------------------------------------------------------------------------------------
+ 
+ /* 초급 52
+ 데이터 분석 함수로 집계 결과 출력하기 1 (ROLLUP) */
+ 
