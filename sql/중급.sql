@@ -156,3 +156,168 @@ SELECT
        M.JOB AS "직업"
   FROM EMP E, EMP M
  WHERE E.MGR = M.EMPNO AND E.JOB='SALESMAN';
+ 
+-- SELF JOIN을 사용하면 정규화가 되어있지 않은 경우에도 타 테이블을 조인하지 않고 위 쿼리와 같이 출력을 할 수 있다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 62 
+여러 테이블의 데이터를 조인해서 출력하기 5 (ON절) */
+-- ON절을 사용한 조인 방법으로 이름과 직업, 월급, 부서 위치를 출력
+SELECT
+       E.ENAME,
+       E.SAL,
+       D.LOC
+  FROM EMP E
+  JOIN DEPT D ON (E.DEPTNO = D.DEPTNO)
+ WHERE E.JOB = 'SALESMAN';
+ 
+/* 여러 테이블을 ANSI 조인으로 조인해보자 */
+SELECT
+       E.ENAME,
+       D.LOC,
+       S.GRADE
+  FROM EMP E
+  JOIN DEPT D ON(E.DEPTNO = D.DEPTNO)
+  JOIN SALGRADE S ON (E.SAL BETWEEN S.LOSAL AND S.HISAL);
+
+/*
+    조인 작성법은 크게 오라클 조인과 ANSI 조인 작성법 두가지로 나뉜다
+        ORCLE JOIN : EQUL, NON EQUAL, OUTER, SELF
+        ANSI : ON, LEFT/RIGHT/FULL OUTER, USING, NATURAL, CROSS
+    성능차이는 없다.
+    개인적으로 ANSI 조인 작성법이 직관적으로 어떤 테이블이 조인되었는지 보기 좋다.
+*/
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 63
+여러 테이블의 데이터를 조인해서 출력하기 6 (USING절) */
+-- USING절을 사용한 조인 방법으로 이름, 직업, 월급, 부서 위치를 출력
+SELECT
+       E.ENAME AS "이름",
+       E.JOB AS "직업",
+       E.SAL AS "월급",
+       D.LOC AS "부서 위치"
+  FROM EMP E
+  JOIN DEPT D
+ USING (DEPTNO)
+ WHERE E.JOB = 'SALESMAN';
+
+/* USING절을 사용하여 여러 테이블을 조인하여 출력해보자 */
+SELECT
+       E.ENAME,
+       D.LOC,
+       S.GRADE
+  FROM EMP E
+  JOIN DEPT D USING(DEPTNO)
+  JOIN SALGRADE S ON(E.SAL BETWEEN S.LOSAL AND S.HISAL);
+ 
+-- WHERE절 대신 USING절을 사용하였다.
+-- USING절엔 조인 조건 대신 두 테이블을 연결할 때 사용할 컬럼만 기술하면 된다.
+-- USING절에 기술한 컬럼엔 별칭을 사용할 수 없다.
+-- USING절엔 반드시 괄호를 사용한다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 64
+여러 테이블의 데이터를 조인해서 출력하기 7 (NATURAL JOIN)*/
+-- NATURAL JOIN 방법으로 이름, 직업, 월급과 부서 위치를 출력
+SELECT
+       E.ENAME AS "이름",
+       E.JOB AS "직업",
+       E.SAL AS "월급",
+       D.LOC AS "부서 위치"
+  FROM EMP E NATURAL JOIN DEPT D
+ WHERE E.JOB = 'SALESMAN';
+ 
+/* 연결고리가 되는 컬럼에 테이블 별칭을 달아 실행해보자 */
+SELECT
+       E.ENAME AS "이름",
+       E.JOB AS "직업",
+       E.SAL AS "월급",
+       D.LOC AS "부서 위치"
+  FROM EMP E NATURAL JOIN DEPT D
+ WHERE E.JOB = 'SALESMAN' AND D.DEPTNO = 30;    -- NATURAL 조인에 사용된 열은 별칭을 가질 수 없다는 에러가 출력된다.
+ /* WHERE E.JOB = 'SALESMAN' AND DEPTNO = 30; */ -- 아래와 같이 기술해야 정상적으로 출력된다.
+ 
+-- 조인 조건을 주지 않고 조인하려면 NATURAL JOIN을 사용한다.
+-- NATURAL JOIN은 조건을 주지 않아도 두 테이블에 둘 다 존재하는 동일한 컬럼을 기반으로 암시적으로 조인을 수행한다.
+-- NATURAL JOIN의 연결고리가 되는 컬럼은 테이블 별칭없이 기술해야 한다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 65
+여러 테이블의 데이터를 조인해서 출력하기 8 (LEFT/RIGHT OUTER JOIN) */
+-- RIGHT OUTER 조인 방법으로 이름, 직업, 월급, 부서 위치를 출력
+SELECT
+       E.ENAME AS "이름",
+       E.JOB AS "직업",
+       E.SAL AS "월급",
+       D.LOC AS "부서위치"
+  FROM EMP E
+ RIGHT JOIN DEPT D ON (E.DEPTNO = D.DEPTNO);
+ 
+/* LEFT OUTER JOIN을 위해 DEPT 테이블에 없는 부서 번호를 넣어보자 */
+INSERT
+  INTO EMP(
+    EMPNO,
+    ENAME,
+    SAL,
+    JOB,
+    DEPTNO
+  )
+  VALUES(
+    8282,
+    'JACK',
+    3000,
+    'ANALYST',
+    50
+  );
+  
+  /* LEFT OUTER JOIN으로 출력해보자 */
+  SELECT
+         E.ENAME AS "이름",
+         E.JOB AS "직업",
+         E.SAL AS "월급",
+         D.LOC AS "부서위치"
+    FROM EMP E
+    LEFT OUTER JOIN DEPT D ON (E.DEPTNO = D.DEPTNO);
+
+-- EQUL JOIN으로 조인이 안되는 결과를 출력하기 위해선 LEFT/RIGHT/FULL OUTER JOIN을 쓰자
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 66 
+여러 테이블의 데이터를 조인해서 출력하기 9 (FULL OUTER JOIN) */
+-- FULL OUTER 조인 방법으로 이름, 직업, 월급, 부서 위치를 출력
+SELECT
+       E.ENAME AS "이름",
+       E.JOB AS "직업",
+       E.SAL AS "월급",
+       D.LOC AS "부서 위치"
+  FROM EMP E
+  FULL OUTER JOIN DEPT D ON(E.DEPTNO = D.DEPTNO);
+
+/* FULL OUTER JOIN을 사용하지 않고 동일한 결과를 출력해보자 */
+SELECT
+       E.ENAME AS "이름",
+       E.JOB AS "직업",
+       E.SAL AS "월급",
+       D.LOC AS "부서 위치"
+  FROM EMP E
+  LEFT OUTER JOIN DEPT D ON(E.DEPTNO = D.DEPTNO)
+
+UNION
+
+SELECT
+      E.ENAME,
+      E.JOB,
+      E.SAL,
+      D.LOC
+  FROM EMP E RIGHT OUTER JOIN DEPT D ON(E.DEPTNO = D.DEPTNO);
+  
+-- FULL OUTER JOIN을 사용하면 한번에 LEFT/RIGHT OUTER JOIN을 수행한다.
+-- 오라클 조인 작성법으로 작성하면 에러가 난다.
+
+---------------------------------------------------------------------------------------------------------
