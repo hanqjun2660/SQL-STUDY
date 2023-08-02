@@ -416,3 +416,262 @@ SELECT
 -- 집합연산자중 UNION ALL을 제외한 집합 연산자는 결과 데이터의 중복을 제거한다.
 
 ---------------------------------------------------------------------------------------------------------
+
+/* 중급 71
+서브 쿼리 사용하기 1 (단일행 서브쿼리) */
+-- JONES보다 더 많은 월급을 받는 사원들의 이름과 월급을 출력
+SELECT
+       ENAME,
+       SAL
+  FROM EMP
+ WHERE SAL > (SELECT
+                      SAL
+                 FROM EMP
+                WHERE ENAME = 'JONES');
+                
+/* SCOTT과 같은 월급을 받는 사원들의 이름과 월급을 출력해보자. */
+SELECT
+       ENAME,
+       SAL
+  FROM EMP
+ WHERE SAL = (SELECT
+                     SAL
+                FROM EMP
+               WHERE ENAME = 'SCOTT');
+               
+/* SCOTT을 제외하고 출력을 해보자 */
+SELECT
+       ENAME,
+       SAL
+  FROM EMP
+ WHERE SAL = (SELECT
+                     SAL
+                FROM EMP
+               WHERE ENAME = 'SCOTT')
+   AND ENAME != 'SCOTT';
+                
+-- 서브 쿼리를 사용하면 서브 쿼리에서 검색한 데이터를 받아 메인 쿼리에서 검색을 할 수 있다.
+-- 서브 쿼리는 괄호안에서 작성한다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 72
+서브 쿼리 사용하기 2 (다중 행 서브쿼리) */
+-- 직업이 SALESMAN인 사원들과 같은 월급을 받는 사원들의 이름과 월급을 출력
+SELECT
+       ENAME,
+       SAL
+  FROM EMP
+ WHERE SAL IN (SELECT
+                     SAL
+                FROM EMP
+               WHERE JOB = 'SALESMAN');
+               
+-- 다중행 서브쿼리는 여러개의 데이터가 검색되기 때문에 메인쿼리에서 IN을 사용하여야 한다.
+/*
+    단일 행 서브쿼리 : 서브 쿼리에서 메인 쿼리로 하나의 값이 반환됨
+    다중 행 서브쿼리 : 서브 쿼리에서 메인 쿼리로 여러개의 값이 반환됨
+    다중 컬럼 서브 쿼리 : 서브 쿼리에서 메인 쿼리로 여러개의 컬럼이 반환됨
+    
+    단일 행 서브쿼리 연산자 -> -, !=, >, <, >=, <=
+    다중 행 서브쿼리 연산자 -> IN, NOT IN, >ANY, <ANY, >ALL, <ALL
+*/
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 73
+서브 쿼리 사용하기 3 (NOT IN) */
+-- 관리자가 아닌 사원들의 이름과 월급과 직업을 출력
+SELECT
+       ENAME,
+       SAL,
+       JOB
+  FROM EMP
+ WHERE EMPNO NOT IN(SELECT
+                           MGR
+                      FROM EMP
+                     WHERE MGR IS NOT NULL);
+                     
+-- 특정 쿼리에서 검색한 데이터 중 다른 쿼리에 없는 데이터를 검색한다.
+-- 위 쿼리에서 WHERE절의 조건으로 NOT IN 연산자를 사용하였고 서브쿼리내에서 IS NOT NULL을 사용하였기 때문에
+-- NULL이 아닌 사원들만 검색이 되었다. 메인 쿼리에서는 그 결과를 NOT IN을 사용하여 서브쿼리 결과에 없는 사원들을 검색하여 출력하였다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 74
+서브 쿼리 사용하기 4 (EXISTS와 NOT EXISTS) */
+-- 부서 테이블에 있는 부서 번호 중에서 사원 테이블에도 존재하는 부서 번호의 부서 번호, 부서명, 부서 위치를 출력
+SELECT
+       DEPTNO,
+       DNAME,
+       LOC
+  FROM DEPT D
+ WHERE EXISTS (SELECT
+                      *
+                 FROM EMP E
+                WHERE E.DEPTNO = D.DEPTNO);
+                
+/* 사원 테이블에 존재하지 않는 부서 검색 */
+SELECT
+       DEPTNO,
+       DNAME,
+       LOC
+  FROM DEPT D
+ WHERE NOT EXISTS (SELECT
+                          *
+                     FROM EMP E
+                    WHERE E.DEPTNO = D.DEPTNO);
+                    
+ -- 특정 테이블의 데이터가 다른 테이블에도 존재하는지 여부를 확인할 수 있다.
+ 
+ ---------------------------------------------------------------------------------------------------------
+ 
+ /* 중급 75
+ 서브 쿼리 사용하기 5 (HAVING절의 서브 쿼리) */
+ -- 직업과 직업별 토탈 월급을 출력하는데, 직업이 SALESMAN인 사원들의 토탈 월급보다 더 큰 값들만 출력
+ SELECT
+        SUM(SAL)
+   FROM EMP
+ HAVING SUM(SAL) > (SELECT
+                           SUM(SAL)
+                      FROM EMP
+                     WHERE JOB = 'SALESMAN');
+                     
+-- WHERE절엔 그룹합수 사용이 불가하기 때문에 HAVING절을 사용하였다.
+-- SELECT문의 6가지 절(SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY)에서 GROUP BY 절을 제외하고 서브쿼리 사용이 가능하다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 76
+서브 쿼리 사용하기 6 (FROM절의 서브 쿼리) */
+-- 이름과 월급과 순위를 출력하는데 순위가 1위인 사원만 출력
+SELECT
+       V.ENAME,
+       V.SAL,
+       V.순위
+  FROM (SELECT
+               ENAME,
+               SAL,
+               RANK() OVER(ORDER BY SAL DESC) AS "순위"
+          FROM EMP) V
+ WHERE V.순위 = 1;
+ 
+-- FROM절에 기술된 서브 쿼리를 INLINE VIEW라고 한다. INLINE VIEW의 결과를 가지고 순위를 출력하였다.
+-- WHERE절엔 분석함수가 사용이 불가능하다. 그럴땐 위와 같이 INLINE VIEW를 통해 해결할 수 있다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 77
+서브 쿼리 사용하기 7 (SELECT절의 서브 쿼리) */
+-- 직업이 SALESMAN인 사원들의 이름과 월급을 출력하는데, 직업이 SALESMAN인 사원들의 최대 월급과 최소 월급을 출력
+SELECT
+       ENAME,
+       SAL,
+       (SELECT MAX(SAL) FROM EMP WHERE JOB = 'SALESMAN') AS "최대 월급",
+       (SELECT MIN(SAL) FROM EMP WHERE JOB = 'SALESMAN') AS "최소 월급"
+  FROM EMP
+ WHERE JOB = 'SALESMAN';
+ 
+-- SELECT절의 서브 쿼리는 서브쿼리가 SELECT절로 확장되었다고해서, 스칼라 서브 쿼리라고 불린다.
+-- 스칼라 서브 쿼리는 출력되는 행의 갯수만큼 반복되어 실행이 된다.
+-- 같은 데이터를 반복해서 출력하므로 첫 행이 출력될때 데이터를 메모리에 올려두고 2행부터 메모리에 있는 데이터를 출력한다. 이것을 서브 쿼리 캐싱이라고 한다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 78
+데이터 입력하기 (INSERT) */
+-- 사원 테이블에 데이터를 입력하는데, 사원 번호 2812, 사원 이름 JACK, 월급 3500, 입사일 2019년 6월 5일, 직업은 ANALYST로 한다.
+INSERT INTO EMP
+(
+    EMPNO,
+    ENAME,
+    SAL,
+    HIREDATE,
+    JOB
+)
+VALUES
+(
+    2812,
+    'JACK',
+    3500,
+    TO_DATE('2019/06/05', 'RRRR/MM/DD'),
+    'ANALYST'
+);
+
+/* 데이터를 추가 후 조회해보자 */
+SELECT
+       *
+  FROM EMP
+ WHERE ENAME = 'JACK';
+
+-- NULL을 입력하는 방법은 암시적 명시적으로 입력하는방법이 있다.
+-- 테이블의 데이터를 입력하고 수정 삭제하는 SQL을 DML(DATA MANIPULATION LANGUAGE)문이라고 한다.
+-- DML의 종류로는 INSERT(입력), UPDATE(수정), DELETE(삭제), MERGE(데이터 입력, 수정, 삭제를 한번에 수행)가 있다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 79
+데이터 수정하기 (UPDATE) */
+-- SCOTT의 월급을 3200으로 수정
+UPDATE EMP
+   SET SAL = 3200
+ WHERE ENAME = 'SCOTT';
+
+/* 업데이트 후 조회해 보자 */
+SELECT
+       ENAME,
+       SAL
+  FROM EMP
+ WHERE ENAME = 'SCOTT';
+ 
+/* UPDATE문에서도 서브쿼리를 사용할 수 있다. */
+UPDATE EMP
+   SET SAL = (SELECT SAL FROM EMP WHERE ENAME = 'KING')
+ WHERE ENAME = 'SCOTT';
+ 
+/* UPDATE 후 조회해보자 */
+SELECT
+       ENAME,
+       SAL
+  FROM EMP
+ WHERE ENAME IN('SCOTT', 'KING');
+ 
+-- UPDATE문은 저장되어 있는 데이터를 수정할때 사용한다.
+-- SET에 수정할 컬럼과 데이터를 입력한다. (서브쿼리 사용가능)
+-- SET에서 여러개의 컬럼을 수정할 수 있다. (","로 구분하여 사용)
+-- UPDATE문은 모든 절에서 서브쿼리 사용이 가능하다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 80
+데이터 삭제하기 (DELETE, TRUNCATE, DROP) */
+-- 사원 테이블에서 SCOTT의 행 데이터를 삭제하자
+DELETE
+  FROM EMP
+ WHERE ENAME = 'SCOTT';
+ 
+/* 삭제 후 조회해보자. */
+SELECT
+       *
+  FROM EMP
+ WHERE ENAME = 'SCOTT';
+
+/* TRUNCATE */
+-- TRUNCCATE TABLE EMP;
+/*
+    TRUNCATE는 삭제 후 취소가 불가능 하다.
+    모든 데이터를 지우고 테이블 구조만 남는다.
+*/
+
+/* DROP */
+--DROP TABLE EMP;
+/*
+    DROP은 테이블 전체를 삭제한다.
+    삭제 후 취소가 불가능하지만 FLASHBACK으로 테이블을 복구할 수 있다.
+*/
+
+-- TRUNCATE, DROP문은 DDL문이다. (DELETE는 DML문)
+-- DELETE는 잘 쓰지않는다. (보통 UPDATE로 상태 컬럼을 변경하는것으로 한다.)
+
+
+-- WHERE절을 사용하지 않으면 테이블 내 모든행이 삭제된다.
