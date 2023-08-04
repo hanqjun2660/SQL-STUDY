@@ -1062,3 +1062,127 @@ SELECT * FROM EMP_VIEW2;
 
 /* 중급 97
 데이터 검색 속도를 높이기 (INDEX) */
+-- 월급을 조회할 때 검색 속도를 높이기 위해 월급에 인덱스를 생성해보자
+CREATE INDEX EMP_SAL
+    ON EMP(SAL);
+
+/* 조회해보자 */
+SELECT
+       ENAME,
+       SAL
+  FROM EMP
+ WHERE SAL = 1600;
+  
+-- 인덱스가 없을 경우 데이터 검색시 월급 컬럼을 처음부터 스캔하고 중간에 1600을 찾은 후 남은 데이터중 1600이 또 있을지 모르니 테이블을 끝까지 스캔한다.
+-- 인덱스가 생성된 경우 데이터를 검색하면 컬럼의 데이터를 내림차순으로 정렬하고 인덱스의 ROWID로 테이블의 ROWID를 찾아 조회한다.
+-- 조회 빈도수가 많은 경우 인덱스를 활용하면 속도를 높일 수 있다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 98
+절대로 중복되지 않는 번호 만들기 (SEQUENCE) */
+-- 숫자 1번부터 100번까지 출력하는 시퀀스를 만들어보자
+CREATE SEQUENCE SEQ1
+       START WITH 1
+       INCREMENT BY 1
+       MAXVALUE 100
+       NOCYCLE;
+       
+/* 테이블을 만들어 시퀀스를 사용해보자 */
+CREATE TABLE EMP02
+(
+    EMPNO NUMBER(10),
+    ENAME VARCHAR2(10),
+    SAL NUMBER(10)
+);
+
+INSERT INTO EMP02 VALUES(SEQ1.NEXTVAL, 'JACK', 3500);
+INSERT INTO EMP02 VALUES(SEQ1.NEXTVAL, 'JAMES', 4500);
+COMMIT;
+
+SELECT * FROM EMP02;
+
+-- 시퀀스는 일련번호 생성기이다.
+-- 시퀀스를 사용하여 NEXTVAL을 사용하면 시퀀스의 현재 번호 다음 번호로 자동으로 넘어간다.
+
+---------------------------------------------------------------------------------------------------------
+  
+/* 중급 99
+실수로 지운 데이터 복구하기 1 (FLASHBACK QUERY) */
+  
+/* 사원테이블에 5분 전 KING 데이터를 검색해보자 */
+
+SELECT * FROM EMP WHERE ENAME = 'KING';
+
+UPDATE EMP SET SAL = 2000;
+ROLLBACK;
+
+SELECT
+       *
+  FROM EMP
+AS OF TIMESTAMP (SYSTIMESTAMP - INTERVAL '5' MINUTE)
+ WHERE ENAME = 'KING';
+ 
+/* 플래쉬백 시간 확인하기 */
+SELECT NAME, VALUE FROM V$PARAMETER WHERE NAME = 'UDNO_RENTENTION';
+ 
+-- AS OF TIMESTAMP절에서 SYSTIMESTAMP - INTERVAL '5' MINUTE은 현재시간에서 5분을 뺀 시간을 의미한다.
+-- 테이블을 플래쉬백 할 수 있는 시간은 기본이 15분이다. 이 시간을 확인하는데는 UNDO_RETENTION으로 확인이 가능하다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 100
+실수로 지운 데이터 복구하기 2 (FLASHBACK TABLE) */
+-- 사원 테이블을 5분 전으로 되돌려보자
+ALTER TABLE EMP ENABLE ROW MOVEMENT;
+
+SELECT * FROM EMP;
+
+FLASHBACK TABLE EMP TO TIMESTAMP (SYSTIMESTAMP - INTERVAL '5' MINUTE);
+COMMIT;
+
+/* TO_TIMESTAMP 함수를 사용해 지정한 시점으로 되돌릴 수 있다. */
+FLASHBACK TABLE EMP TO TIMESTAMP
+TO_TIMESTAMP('19/06/30 07:20:59', 'RR/MM/DD HH24:MI:SS');
+
+-- FLASHBACK TABLE을 사용하면 현재까지 수행했던 DML작업을 반대로 수행하며 되돌린다.
+-- FLASHBACK을 사용하여 성공적으로 수행되었다면 COMMIT을 하여 영구히 저장해야 한다.
+-- TO_TIMESTAMP는 시점을 지정하여 되돌릴 수 있지만 현재시점부터 지정된 시점 사이 DDL/DCL문을 수행하였다면 에러가 발생하고 FLASHBACK이 수행되지 않는다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 101
+실수로 지운 데이터 복구하기 3 (FLASHBACK DROP) */
+-- DROP된 사원 테이블을 복구해보자
+DROP TABLE EMP;
+
+/* 아래 쿼리를 실행하면 휴지통에 있는 테이블을 확인할 수 있다. */
+SELECT ORIGINAL_NAME, DROPTIME FROM USER_RECYCLEBIN;
+
+/* 테이블을 FLASHBACK 해보자 */
+FLASHBACK TABLE EMP TO BEFORE DROP RENAME TO EMP;
+
+/* 테이블이 복구되어 정상적으로 조회된다. */
+SELECT * FROM EMP;
+
+-- FLASHBACK TABLE 테이블명 TO DROP RENAME TO 테이블명 으로 DROP된 테이블을 복구할 수 있다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 102
+실수로 지운 데이터 복구하기 4 (FLASHBACK VERSION QUERY) */
+-- 사원 테이블의 데이터가 과거 특정 시점부터 지금까지 어떻게 변경되어 왔는지 이력 정보를 출력
+SELECT
+       ENAME,
+       SAL,
+       VERSIONS_STARTTIME,
+       VERSIONS_ENDTIME,
+       VERSIONS_OPERATION
+  FROM EMP
+VERSIONS BETWEEN TIMESTAMP
+         TO_TIMESTAMP('2023-08-04 21:40:00', 'RRRR-MM-DD HH24:MI:SS')
+         AND MAXVALUE
+ WHERE ENAME = 'KING'
+ ORDER BY VERSIONS_STARTTIME;
+ 
+-- VERSION절에 보고싶은 기간을 지정할 수 있다. 시분초까지 상세히 설정이 가능하다.
