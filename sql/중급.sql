@@ -913,3 +913,130 @@ CONNECT BY PRIOR EMPNO = MGR
 -- BLAKE의 팀원들까지 전부 안나오게 하려면 CONNECT BY절에 조건을 걸어야한다.
 
 ---------------------------------------------------------------------------------------------------------
+
+/* 중급 91
+계층형 질의문으로 서열을 주고 데이터 출력하기 3 */
+-- 계층형 질의문을 이용하여 사원 이름, 월급, 직업을 서열과 같이 출력하는데, 서열 순서를 유지하면서 월급이 높은 사원부터 출력
+SELECT
+       RPAD(' ', LEVEL * 3) ||
+       ENAME AS "EMPLOYEE",
+       LEVEL,
+       SAL,
+       JOB
+  FROM EMP
+ START WITH ENAME = 'KING'
+CONNECT BY PRIOR EMPNO = MGR
+ ORDER SIBLINGS BY SAL DESC;
+ 
+-- ORDER BY 사이에 SIBLINGS를 사용하면 계층형 질의문 순서를 깨뜨리지 않으면서 조건대로 정렬하여 출력할 수 있다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 92
+계층형 질의문으로 서열을 주고 데이터 출력하기 4 */
+-- 계층형 질의문과 SYS_CONNECT_BY 함수를 이용하여 서열 순서를 가로로 출력
+SELECT
+       ENAME,
+       SYS_CONNECT_BY_PATH(ENAME, '/') AS "PATH"
+  FROM EMP
+ START WITH ENAME = 'KING'
+CONNECT BY PRIOR EMPNO = MGR;
+
+/* LTRIM을 사용해서 제일 앞에 붙는'/'를 지우고 출력을 해보자 */
+SELECT
+       ENAME,
+       LTRIM(SYS_CONNECT_BY_PATH(ENAME, '/'), '/') AS "PATH"
+  FROM EMP
+ START WITH ENAME = 'KING'
+CONNECT BY PRIOR EMPNO = MGR;
+
+-- SYS_CONNECT_BY_PATH 함수에 두번째 인자를 입력하면 조회하는 컬럼사이에 두번째 인자가 출력되며 구분해준다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 93
+일반 테이블 생성하기 (CREATE TABLE) */
+-- 사원 번호, 이름, 월급, 입사일을 저장할 수 있는 테이블을 생성
+CREATE TABLE EMP01
+(
+    EMPNO NUMBER(10),
+    ENAME VARCHAR2(10),
+    SAL NUMBER(10,2),
+    HIREDATE DATE
+);
+
+/* 
+    CHAR : 고정 길이 문자 데이터 유형, 최대 길이는 2000
+    VARCHAR2 : 가변 길이 문자 데이터 유형, 최대 길이는 4000
+    LONG : 가변 길이 문자 데이터 유형, 최대 2GB 문자 데이터 허용
+    CLOB : 문자 데이터 유형, 최대 4GB 문자 데이터 허용
+    BLOB : 바이너리 데이터 유형, 최대 4GB 바이너리 데이터 허용
+    NUMBER : 숫자 데이터 유형, 십진 숫자의 자리수는 최대 38자리까지, 소수점 이하 자리는 -84 ~ 127까지 허용
+    DATE : 날짜 데이터 유형 기원전 4712년 01월 01일 부터 기원 후 9999년 12월 31일까지 날짜를 허용
+*/
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 94
+임시 테이블 생성하기 (CREATE TEMPORARY TABLE) */
+-- 사원 번호, 이름, 월급을 저장할 수 있는 테이블을 생성하는데 COMMIT할 때 까지만 데이터를 저장할 수 있도록 하자
+CREATE GLOBAL TEMPORARY TABLE EMP37
+(
+    EMPNO NUMBER(10),
+    ENAME VARCHAR2(10),
+    SAL NUMBER(10)
+)
+ON COMMIT DELETE ROWS;
+
+/* 만든 임시테이블에 데이터를 넣어보고 확인해보자 */
+INSERT INTO EMP37(EMPNO, ENAME, SAL) SELECT EMPNO, ENAME, SAL FROM EMP;
+
+SELECT * FROM EMP37;    -- 데이터가 잘 들어가 있다. COMMIT후 확인해보자
+
+COMMIT;     -- COMMIT 후 다시 임시테이블을 조회하면 데이터가 삭제되어있다.
+
+/* ON COMMIT PRESERVE ROW 옵션도 사용해서 테스트 해보자 */
+CREATE GLOBAL TEMPORARY TABLE EMP38
+(
+    EMPNO NUMBER(10),
+    ENAME VARCHAR2(10),
+    SAL NUMBER(10)
+)
+ON COMMIT PRESERVE ROWS;
+
+INSERT INTO EMP38(EMPNO, ENAME, SAL) SELECT EMPNO, ENAME, SAL FROM EMP;
+COMMIT;
+
+SELECT * FROM EMP38;    -- 아직 잘 들어있다 세션을 종료하고 다시 확인해보자.
+
+-- TEMPORARY TABLE은 임시 테이블을 뜻한다. 임시 테이블은 데이터를 임시로 보관하기 위해 사용한다.
+-- TEMPORARY TABLE에는 옵션이 존재한다. (ON COMMIT DELETE ROWS(COMMIT할때까지만 데이터 보관), ON COMMIT PRESERVE ROWS(세션이 종료될때까지 데이터 보관))
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 95
+복잡한 쿼리를 단순하게 하기 1 (VIEW) */
+-- 직업이 SALESMAN인 사원들의 사원 번호, 이름, 월급, 직업, 부서 번호를 출력하는 VIEW를 생성해보자
+
+/* VIEW를 만들 권한이 없다면 SYSTEM 계정에서 해당 계정에 VIEW 생성 권한을 부여하자 */
+GRANT CREATE VIEW TO C##SCOTT;
+
+CREATE VIEW EMP_VIEW
+AS
+SELECT
+       EMPNO,
+       ENAME,
+       SAL,
+       JOB,
+       DEPTNO
+  FROM EMP
+ WHERE JOB = 'SALESMAN';
+ 
+ /* 조회해보자 */
+ SELECT * FROM EMP_VIEW;
+ 
+ -- VIEW는 VIEW를 통해 보여줘야 할 테이블을 AS 이후에 작성한다.
+ -- VIEW는 보여주어야하는 테이블의 일부 컬럼들만 공개할 수 있기 때문에 보안상 공개되지 않아야하는 데이터가 있을 때 유용하다.
+ -- VIEW에 있는 데이터를 변경하면 실제 테이블의 데이터가 변경된다.
+ 
+ ---------------------------------------------------------------------------------------------------------
