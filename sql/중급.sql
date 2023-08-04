@@ -839,3 +839,77 @@ ROLLBACK;
 -- 서브쿼리를 사용하여 데이터 삭제 조건을 사용할 수 있다.
 
 ---------------------------------------------------------------------------------------------------------
+
+/* 중급 88
+서브 쿼리를 사용하여 데이터 합치기 */
+/* 
+    부서 테이블에 숫자형으로 SUMSAL컬럼을 추가합니다. 그리고 사원 테이블을 이용하여
+    SUMSAL 컬럼의 데이터를 부서 테이블의 부서 번호별 토탈 월급으로 갱신합니다.
+*/
+
+/* 부서 테이블에 SUMSAL 컬럼이 존재하지 않으니 먼저 추가해주자 */
+ALTER TABLE DEPT ADD SUMSAL NUMBER(10);
+COMMIT;
+
+ MERGE INTO DEPT D
+ USING (SELECT                          -- USING절에서 서브쿼리를 사용하여 출력되는 데이터를 가지고 DEPT테이블에 MERGE하였다.
+               DEPTNO,
+               SUM(SAL) AS "SUMSAL"
+          FROM EMP
+         GROUP BY DEPTNO) V
+    ON (D.DEPTNO = V.DEPTNO)            -- 서브 쿼리에서 반환하는 부서 번호와, 사원테이블의 부서번호로 조인을 한다.
+  WHEN MATCHED THEN                     -- 두 테이블의 부서 번호가 서로 일치하는지 확인
+UPDATE
+   SET D.SUMSAL = V.SUMSAL;             -- 일치하면 해당 부서 번호의 토탈 월급으로 값을 UPDATE
+
+COMMIT;
+
+/* DEPT 테이블을 조회해보자 */
+SELECT
+       *
+  FROM DEPT;
+
+/* MERGE문으로 수행하지 않고 동일한 수행을할 때 */
+UPDATE DEPT D
+   SET SUMSAL = (SELECT
+                        SUM(SAL)
+                   FROM EMP E
+                  WHERE E.DEPTNO = D.DEPTNO);
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 89
+계층형 질의문으로 서열을 주고 데이터 출력하기 1 */
+-- 계층형 질의문을 이용하여 사원 이름, 월급, 직업을 출력하는데 사원들 간의 서열(LEVEL)을 같이 출력
+SELECT
+       RPAD(' ', LEVEL*3) ||
+       ENAME AS EMPLOYEE,
+       LEVEL, 
+       SAL,
+       JOB
+  FROM EMP
+ START WITH ENAME = 'KING'          -- KING이 최상위 계층이 된다.
+CONNECT BY PRIOR EMPNO = MGR;       -- 부모노드와 자식노드를 지정
+
+-- CONNECT BY와 START WITH절을 사용하면 LEVEL 컬럼을 출력할 수 있다.
+-- LEVEL은 트리 구조에서의 계층을 뜻한다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 90
+계층형 질의문으로 서열을 주고 데이터 출력하기 2 */
+-- 예제 89 결과에서 BLAKE와 BLAKE의 직속 부하들은 출력되지 않도록 해보자
+SELECT
+       RPAD(' ', LEVEL*3) ||
+       ENAME AS "EMPLOYEE",
+       LEVEL,
+       SAL,
+       JOB
+  FROM EMP
+ START WITH ENAME = 'KING'
+CONNECT BY PRIOR EMPNO = MGR
+   AND ENAME != 'BLAKE';
+   
+-- BLAKE의 팀원들까지 전부 안나오게 하려면 CONNECT BY절에 조건을 걸어야한다.
+
+---------------------------------------------------------------------------------------------------------
