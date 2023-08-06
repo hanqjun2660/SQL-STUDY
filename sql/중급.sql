@@ -1206,3 +1206,32 @@ ORDER BY START_TIMESTAMP DESC;
 
 /* 중급 104
 데이터 품질 높이기 1 (PRIMARY KEY) */
+-- PRIMARY KEY를 생성하기 위해 테이블을 하나 생성해보자
+CREATE TABLE DEPT2
+(
+    DEPTNO NUMBER(10) CONSTRAINT DEPT2_DEPTNO_PK PRIMARY KEY,
+    DNAME VARCHAR2(14),
+    LOC VARCHAR2(10)
+);
+
+/* 테이블에 생성된 제약조건을 확인하는 법 */
+SELECT
+       A.CONSTRAINT_NAME,
+       A.CONSTRAINT_TYPE,
+       B.COLUMN_NAME
+  FROM USER_CONSTRAINTS A, USER_CONS_COLUMNS B
+ WHERE A.TABLE_NAME = 'DEPT2'
+   AND A.CONSTRAINT_NAME = B.CONSTRAINT_NAME;
+
+/* 테이블 생성 후 제약조건을 생성하는 방법으로는 아래와 같다 */
+ALTER TABLE DEPT2
+  ADD CONSTRAINT DEPT2_DEPTNO_PK PRIMARY KEY(DEPTNO);
+
+-- PRIMARY KEY 제약이 걸린 컬럼에는 중복데이터와 NULL이 입력될 수 없다.
+-- PRIMARY KEY는 대부분 해당 ROW의 KEY로 사용된다.
+-- PRIMARY KEY는 고유한 행을 가지는 컬럼임을 보장하는 제약조건이다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 105 
+데이터 품질 높이기 (UNIQUE) */
