@@ -1185,4 +1185,24 @@ VERSIONS BETWEEN TIMESTAMP
  WHERE ENAME = 'KING'
  ORDER BY VERSIONS_STARTTIME;
  
--- VERSION절에 보고싶은 기간을 지정할 수 있다. 시분초까지 상세히 설정이 가능하다.
+-- VERSIONS절에 보고싶은 기간을 지정할 수 있다. 시분초까지 상세히 설정이 가능하다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 103
+실수로 지운 데이터 복구하기 5 (FLASHBACK TRANSACTION QUERY) */
+-- 사원 테이블의 데이터를 5분 전으로 되돌리기 위한 DML문을 출력
+SELECT UNDO_SQL         -- UDNO(취소) 할 수 있는 SQL을 조회한다.
+FROM FLASHBACK_TRANSACTION_QUERY
+WHERE TABLE_OWNER = 'SCOTT' AND TABLE_NAME = 'EMP'
+AND COMMIT_SCN BETWEEN 9457390 AND 9457397
+ORDER BY START_TIMESTAMP DESC;
+
+-- SCN(SYSTEM CHANGE NUMBER)의 약자로 COMMIT시 생성되는 번호이다. 특정시간대의 SCN 번호를 범위로 지정한다.
+-- TRANSACTION QUERY의 결과를 보기 위해선 DB를 한번 내렸다 올려야 한다.
+-- DB를 한번 내린 후 올리고 아카이브모드로 DB를 변경하여야 한다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 104
+데이터 품질 높이기 1 (PRIMARY KEY) */
