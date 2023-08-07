@@ -1345,3 +1345,78 @@ ALTER TABLE DEPT7
 -- 참조되고 있는 테이블의 PK를 삭제하기 위해선 CASCADE 옵션을 사용하여야 한다.
 
 ---------------------------------------------------------------------------------------------------------
+
+/* 중급 109
+WITH절 사용하기 1 (WITH ~ AS) */
+-- WITH절을 이용하여 직업과 직업별 토탈 월급을 출력하는데, 직업별 토탈 월급들의 평균값보다 더 큰것만 출력
+WITH JOB_SUMSAL AS (SELECT JOB,
+                           SUM(SAL) AS "토탈"
+                      FROM EMP
+                     GROUP BY JOB)
+SELECT
+       JOB,
+       토탈
+  FROM JOB_SUMSAL
+ WHERE 토탈 > (SELECT
+                      AVG(토탈)
+                 FROM JOB_SUMSAL);
+                 
+-- 검색시간이 오래 걸리는 SQL이 반복되어 사용될 때 성능을 높이기 위해 사용한다.
+-- 임시테이블을 만들어 그 임시테이블을 조회하는격이다.
+-- WITH절에서 사용한 임시 테이블은 WITH절 내에서만 사용이 가능하다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 110
+WITH절 사용하기 2 (SUBQUERY FACTORING) */
+WITH JOB_SUMSAL AS (SELECT
+                           JOB,
+                           SUM(SAL) AS "토탈"
+                      FROM EMP
+                     GROUP BY JOB),
+     DEPTNO_SUMSAL AS (SELECT
+                              DEPTNO,
+                              SUM(SAL) AS "토탈"
+                         FROM EMP
+                        GROUP BY DEPTNO
+                       HAVING SUM(SAL) > (SELECT
+                                                 AVG(토탈) + 3000
+                                            FROM JOB_SUMSAL)
+                       )
+SELECT
+       DEPTNO,
+       토탈
+  FROM DEPTNO_SUMSAL;
+                     
+-- 서브 쿼리 2개가 서로 데이터를 참고할 수 있게 만들 수 있다.
+-- 이런식으로 WITH절의 쿼리 결과를 임시 테이블로 생성하는것을 SUBQUERY FACTORING이라고 한다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 111
+SQL로 알고리즘 문제 풀기 1 (구구단 2단 출력) */
+-- SQL을 이용하여 구구단 2단을 출력해보자. 계층형 질의문을 이용하면 루프(LOOP)문을 SQL로 구현할 수 있다.
+WITH LOOP_TABLE AS (SELECT
+                           LEVEL AS "NUM"
+                      FROM DUAL
+                    CONNECT BY LEVEL <= 9)
+SELECT
+       '2' || 'X' || NUM || '=' || 2 * NUM AS "2단"
+  FROM LOOP_TABLE;
+  
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 112
+SQL로 알고리즘 문제 풀기 2 (구구단 1단 ~ 9단 출력) */
+-- SQL을 이용하여 구구단 1단부터 9단까지 출력
+WITH LOOP_TABLE AS (SELECT
+                           LEVEL AS "NUM"
+                      FROM DUAL
+                    CONNECT BY LEVEL <= 9),
+     GUGU_TABLE AS (SELECT
+                           LEVEL+1 AS "GUGU"
+                      FROM DUAL
+                    CONNECT BY LEVEL <= 8)
+SELECT
+       TO_CHAR(A.NUM) || 'X' || TO_CHAR(B.GUGU) || '=' || TO_CHAR(B.GUGU * A.NUM) AS "구구단"
+  FROM LOOP_TABLE A, GUGU_TABLE B;
