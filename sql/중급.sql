@@ -1228,10 +1228,120 @@ ALTER TABLE DEPT2
   ADD CONSTRAINT DEPT2_DEPTNO_PK PRIMARY KEY(DEPTNO);
 
 -- PRIMARY KEY 제약이 걸린 컬럼에는 중복데이터와 NULL이 입력될 수 없다.
--- PRIMARY KEY는 대부분 해당 ROW의 KEY로 사용된다.
+-- PRIMARY KEY는 대부분 해당 ROW의 KEY(식별자)로 사용된다.
 -- PRIMARY KEY는 고유한 행을 가지는 컬럼임을 보장하는 제약조건이다.
 
 ---------------------------------------------------------------------------------------------------------
 
 /* 중급 105 
 데이터 품질 높이기 (UNIQUE) */
+/* 테이블 생성시 UNIQUE 제약조건을 추가하자 */
+CREATE TABLE DEPT3
+(
+    DEPTNO NUMBER(10),
+    DNAME VARCHAR2(14) CONSTRAINT DEPT3_DNAME_UN UNIQUE,
+    LOC VARCHAR2(10)
+);
+
+/* 테이블에 걸려있는 제약조건을 확인해보면 DNAME 컬럼에 UNIQUE 제약조건이 걸려있는것을 확인할 수 있다. */
+
+/* 테이블 생성 후 ADD를 사용하여 제약조건을 걸 수 있다. */
+CREATE TABLE DEPT4
+(
+    DEPTNO NUMBER(10),
+    DNAME VARCHAR2(13),
+    LOC VARCHAR2(10)
+);
+
+ALTER TABLE DEPT4
+  ADD CONSTRAINT DEPT4_DNAME_UN UNIQUE(DNAME);
+
+-- UNIQUE 제약조건은 컬럼중 중복된 데이터가 있으면 안되는 컬럼에 줄 수 있는 제약조건이다.
+-- NULL은 입력이 가능하다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 106
+데이터 품질 높이기 3 (NOT NULL) */
+/* 테이블을 생성할 때 LOC 컬럼에 NOT NULL 제약조건을 추가하자 */
+CREATE TABLE DEPT5
+(
+    DEPTNO NUMBER(10),
+    DNAME VARCHAR2(14),
+    LOC VARCHAR2(10) CONSTRAINT DEPT5_LOC_NN NOT NULL
+);
+
+/* 테이블 생성 후 LOC 컬럼에 NOT NULL 제약조건을 추가하자 */
+CREATE TABLE DEPT6
+(
+    DEPTNO NUMBER(10),
+    DNAME VARCHAR2(14),
+    LOC VARCHAR2(10)
+);
+
+ALTER TABLE DEPT6
+  MODIFY LOC CONSTRAINT DEPT6_LOC_NN NOT NULL;
+
+-- NOT NULL 제약조건은 NULL을 허용하지 않으며, 데이터가 필수로 입력되어야하는 컬럼에 제약조건을 설정한다.
+-- 테이블 생성 후 NOT NULL 제약조건 생성시에는 ADD가 아닌 MODIFY로 생성한다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 107
+데이터 품질 높이기 (CHECK) */
+-- 사원 테이블을 생성하는데 월급이 0에서 6000 사이의 데이터만 입력되거나 수정될 수 있도록 제약조건을 추가하자
+CREATE TABLE EMP6
+(
+    EMPNO NUMBER(10),
+    ENAME VARCHAR2(20),
+    SAL NUMBER(10) CONSTRAINT EMP6_SAL_CK CHECK(SAL BETWEEN 0 AND 6000)
+);
+
+/* 데이터를 입력해보자 */
+INSERT INTO EMP6
+(
+    EMPNO,
+    ENAME,
+    SAL
+)
+VALUES
+(
+    1,
+    'CLARK',
+    9000        -- 0 ~ 6000 사이의 값을 입력하지 않으니 CHECK제약조건 위배로 데이터가 입력되지 않는다.
+);
+
+/* 데이터를 6000이상으로 입력하려면 CHECK 제약조건을 삭제해야한다. */
+ALTER TABLE EMP6
+  DROP CONSTRAINT EMP6_SAL_CK;      -- 제약조건을 DROP후 다시 데이터를 입력하면 정상적으로 데이터가 입력된다.
+
+-- 특정 컬럼에 지정된 데이터만 입력될 수 있도록 제한할땐 CHECK 제약조건을 사용하자
+
+---------------------------------------------------------------------------------------------------------
+
+/* 중급 108
+데이터의 품질 높이기 5 (FOREIGN KEY) */
+-- 사원 테이블의 부서 번호에 데이터를 입력할 때 부서 테이블에 존재하는 부서 번호만 입력될 수 있도록 제약조건을 생성하자.
+CREATE TABLE DEPT7
+(
+    DEPTNO NUMBER(10) CONSTRAINT DEP7_DEPTNO_PK PRIMARY KEY,
+    DNAME VARCHAR2(14),
+    LOC VARCHAR2(10)
+);
+
+CREATE TABLE EMP7
+(
+    EMPNO NUMBER(10),
+    ENAME VARCHAR2(20),
+    SAL NUMBER(10),
+    DEPTNO NUMBER(10) CONSTRAINT EMP7_DEPTNO_FK REFERENCES DEPT7(DEPTNO)
+);
+
+/* 참조되고있는 DEPT7 테이블의 PRIMARY KEY를 삭제하기위해서 CASCADE 옵션을 사용해야한다.*/
+ALTER TABLE DEPT7
+ DROP CONSTRAINT DEPT7_DEPTNO_PK CASCADE;   -- 부모테이블의 PK를 CASCADE 옵션을 사용하여 삭제하면 자식 테이블의 FK 제약조건도 같이 삭제된다.
+
+-- 특정 컬럼에 지정된 데이터만 허용할 때 다른 테이블의 데이터를 참조하기 위해 사용된다. (참조키)
+-- 참조되고 있는 테이블의 PK를 삭제하기 위해선 CASCADE 옵션을 사용하여야 한다.
+
+---------------------------------------------------------------------------------------------------------
