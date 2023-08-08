@@ -232,7 +232,7 @@ END;
 
 ---------------------------------------------------------------------------------------------------------
 
-/* SQL 응용 다지기
+/* SQL 응용 다지기 150
 프로시저 구현하기 */
 -- 이름을 입력받아 해당 사원의 월급이 출력되게 하는 프로시저를 생성
 CREATE OR REPLACE PROCEDURE PRO_ENAME_SAL
@@ -255,3 +255,53 @@ EXEC PRO_ENAME_SAL('SCOTT');
 
 -- 프로시저를 생성하면 PL/SQL코드를 데이터베이스에 저장하고 호출할 수 있다.
 -- PL/SQL코드로 데이터베이스에 저장하는 방법
+-- 여러개의 쿼리를 한번에 실행하여 처리하는 방법으로 자바에서의 처리보다 속도면에서 빠르다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* SQL 응용 다지기 151
+함수 구현하기 */
+-- 부서 번호를 입력받아 해당 부서 사원들의 부서 위치가 출력되는 함수를 생성
+CREATE OR REPLACE FUNCTION GET_LOC
+(P_DEPTNO IN DEPT.DEPTNO%TYPE)
+RETURN DEPT.LOC%TYPE
+IS
+    V_LOC DEPT.LOC%TYPE;
+BEGIN
+    SELECT
+           LOC INTO V_LOC
+      FROM DEPT
+     WHERE DEPTNO = P_DEPTNO;
+    RETURN V_LOC;
+END;
+
+/* 위에서 만든 함수를 SELECT에서 호출하여 사용해보자 */
+SELECT
+       ENAME,
+       GET_LOC(DEPTNO) AS "LOC"     -- 호출된 함수에서 DEPT 테이블의 LOC컬럼 결과를 RETURN하여 출력이 가능하다.
+  FROM EMP
+ WHERE JOB = 'SALESMAN';
+
+-- 사용자가 직접 필요한 함수를 생성하여 사용할 수 있도록 오라클에서 함수 생성을 지원한다.
+-- %TYPE을 사용하면 부모 테이블 컬럼의 데이터 타입을 따라가기 때문에 부모 테이블 데이터 타입의 길이가 바뀌거나 수정되어도 PL/SQL을 수정할 필요가 없다.
+
+---------------------------------------------------------------------------------------------------------
+
+/* SQL 응용 다지기 152
+수학식 구현하기 1 (절대값) */
+-- 숫자를 물어보게 하고 해당 숫자의 절대값이 출력되는 PL/SQL을 작성
+SET SERVEROUTPUT ON
+ACCEPT P_NUM PROMPT '숫자를 입력하세요 ~ '
+
+DECLARE
+    V_NUM NUMBER(10) := &P_NUM;
+
+BEGIN
+    IF V_NUM >= 0 THEN
+        DBMS_OUTPUT.PUT_LINE(V_NUM);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE(-1 * V_NUM);
+    END IF;
+END;
+
+---------------------------------------------------------------------------------------------------------
